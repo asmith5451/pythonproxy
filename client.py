@@ -26,3 +26,4 @@ try:
 
 finally:
     print('closing socket', file=sys.stderr)
+    sock.close()
