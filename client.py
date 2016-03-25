@@ -12,7 +12,8 @@ print('connecting to server {} on port {}'.format(bind_address, bind_port),
 sock.connect((bind_address, bind_port))
 
 try:
-    message = 'This is the message. It will be repeated.'
+    #message = 'This is the message. It will be repeated.'
+    message = 'GET / HTTP/1.0\nhost: www.example.com\n\n'
     print('sending "{}"'.format(message), file=sys.stderr)
     sock.sendall(message.encode('utf-8'))
 
@@ -20,7 +21,7 @@ try:
     amount_expected = len(message)
 
     while amount_recieved < amount_expected:
-        data = sock.recv(16)
+        data = sock.recv(1024)
         amount_recieved += len(data)
         print('recieved "{}"'.format(data.decode('utf-8')), file=sys.stderr)
 
