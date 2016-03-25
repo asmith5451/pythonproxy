@@ -2,8 +2,9 @@ import socketserver
 import request
 
 class ProxyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    def __init__(self, server_address, handler_class=request.ProxyRequestHandler):
+    def __init__(self, server_address, dest_address, handler_class):
         socketserver.TCPServer.__init__(self, server_address, handler_class)
+        self.dest_address = dest_address
         return
     def server_activate(self):
         socketserver.TCPServer.server_activate(self)
@@ -29,16 +30,17 @@ class ProxyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 if __name__ == '__main__':
     import sys
     import socket
+    import configparser
+    config = configparser.ConfigParser()
+    config.read('server2.ini')
 
-    if len(sys.argv) != 3:
-        print('usage: python server2.py [host] [port]', file=sys.stderr)
-        sys.exit()
+    host = config['proxy']['host']
+    port = int(config['proxy']['port'])
+    dhost = config['proxy']['dhost']
+    dport = int(config['proxy']['dport'])
 
-    address = sys.argv[1]
-    port = int(sys.argv[2])
-
-    address = (socket.gethostbyname(address), port)
-    server = ProxyServer(address, request.ProxyRequestHandler)
-    ip, port = server.server_address
+    src = (socket.gethostbyname(host), port)
+    dst = (dhost, dport)
+    server = ProxyServer(src, dst, request.ProxyRequestHandler)
 
     server.serve_forever()
