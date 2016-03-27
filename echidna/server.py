@@ -1,7 +1,19 @@
 import socketserver
-import request
+import echidna.request
 import sys
 # https://www.youtube.com/watch?v=3r8s6hrssh8
+
+def setup():
+    printf("setup called", file=sys.stderr)
+
+def serve():
+    printf("serve called", file=sys.stderr)
+
+def teardown():
+    printf("teardown called", file=sys.stderr)
+
+def reload_config():
+    printf("reload called", file=sys.stderr)
 
 class ProxyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def __init__(self, server_address, dest_address, handler_class):
@@ -34,7 +46,7 @@ if __name__ == '__main__':
     import socket
     import configparser
     config = configparser.ConfigParser()
-    config.read('server2.ini')
+    config.read('server.ini')
 
     host = config['proxy']['host']
     port = int(config['proxy']['port'])
