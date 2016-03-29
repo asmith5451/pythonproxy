@@ -9,7 +9,6 @@ setup(name = 'echidna',
           ]
       },
       install_requires = [
-          'python-daemon',
-          'lockfile'
+          'python-daemon'
       ]
      )

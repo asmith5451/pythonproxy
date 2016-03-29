@@ -3,7 +3,6 @@ import os
 import grp
 import signal
 import daemon
-import lockfile
 
 from .server import (
     serve,
@@ -13,14 +12,12 @@ from .server import (
 
 def main(args = None):
     cwd_path = os.path.dirname(__file__)
-    pid_path = os.path.join(cwd_path, 'run/echidna.pid')
 
-    print(cwd_path, file=sys.stderr)
-    print(pid_path, file=sys.stderr)
+    # TODO: research PID file locking since lockfile is depricated and doesn't
+    # seem to work
 
     context = daemon.DaemonContext(
         working_directory = cwd_path,
-        pidfile=lockfile.FileLock(pid_path)
     )
 
     context.signal_map = {
@@ -29,16 +26,14 @@ def main(args = None):
         signal.SIGUSR1: reload_config
     }
 
-    # The main routine.
+    # get arguments from command line if not passed directly
     if args is None:
         args = sys.argv[1:]
 
-    # Do argument parsing here (eg. with argparse) and anything else
-    # you want your project to do.
+    # TODO: handle arguments for start, stop, restart, and reload
 
     with context:
         serve()
-
 
 if __name__ == "__main__":
     main()
