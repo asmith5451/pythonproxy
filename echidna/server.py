@@ -1,6 +1,6 @@
 import socketserver
 import socket
-from echidna.request import ProxyRequestHandler
+from .request import ProxyRequestHandler
 import sys
 # https://www.youtube.com/watch?v=3r8s6hrssh8
 
@@ -40,7 +40,6 @@ class ProxyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
         return
 
 if __name__ == '__main__':
-    setup()
     try:
         serve()
     except KeyboardInterrupt:

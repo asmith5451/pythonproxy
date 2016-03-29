@@ -6,7 +6,7 @@ import socket
 class ProxyRequestHandler(socketserver.BaseRequestHandler):
     # 
     def __init__(self, request, client_address, server):
-        super(ProxyRequestHandler, self).__init__(request, client_address, server)
+        super().__init__(request, client_address, server)
         return
     # 
     def setup(self):
@@ -16,7 +16,7 @@ class ProxyRequestHandler(socketserver.BaseRequestHandler):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((host, port))
         print('connected to {}:{}'.format(host, port), file=sys.stderr)
-        return super(ProxyRequestHandler, self).setup()
+        return super().setup()
     #
     def handle(self):
         print('transmitting data', file=sys.stderr)
@@ -35,4 +35,4 @@ class ProxyRequestHandler(socketserver.BaseRequestHandler):
     #
     def finish(self):
         self.sock.close()
-        return super(ProxyRequestHandler, self).finish()
+        return super().finish()
