@@ -5,23 +5,40 @@ import signal
 import daemon
 import lockfile
 
-from echidna.server import (
-    setup,
+from .server import (
     serve,
     teardown,
     reload_config
 )
 
 def main(args = None):
-    """ The main routine. """
+    cwd_path = os.path.dirname(__file__)
+    pid_path = os.path.join(cwd_path, 'run/echidna.pid')
+
+    print(cwd_path, file=sys.stderr)
+    print(pid_path, file=sys.stderr)
+
+    context = daemon.DaemonContext(
+        working_directory = cwd_path,
+        pidfile=lockfile.FileLock(pid_path)
+    )
+
+    context.signal_map = {
+        signal.SIGTERM: teardown,
+        signal.SIGHUP: 'terminate',
+        signal.SIGUSR1: reload_config
+    }
+
+    # The main routine.
     if args is None:
         args = sys.argv[1:]
 
-    print('This is the main routine.')
-    print('It should do something interesting.')
-
     # Do argument parsing here (eg. with argparse) and anything else
     # you want your project to do.
+
+    with context:
+        serve()
+
 
 if __name__ == "__main__":
     main()
