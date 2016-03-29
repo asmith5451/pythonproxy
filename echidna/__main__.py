@@ -3,6 +3,8 @@ import os
 import grp
 import signal
 import daemon
+from daemon import runner
+from lockfile.pidlockfile import PIDLockFile
 
 from .server import (
     serve,
@@ -11,13 +13,13 @@ from .server import (
 )
 
 def main(args = None):
-    cwd_path = os.path.dirname(__file__)
-
-    # TODO: research PID file locking since lockfile is depricated and doesn't
-    # seem to work
+    # get arguments from command line if not passed directly
+    if args is None:
+        args = sys.argv[1:]
 
     context = daemon.DaemonContext(
-        working_directory = cwd_path,
+        working_directory = os.path.dirname(__file__),
+        pidfile = PIDLockFile('/tmp/echidna.pid')
     )
 
     context.signal_map = {
@@ -25,12 +27,6 @@ def main(args = None):
         signal.SIGHUP: 'terminate',
         signal.SIGUSR1: reload_config
     }
-
-    # get arguments from command line if not passed directly
-    if args is None:
-        args = sys.argv[1:]
-
-    # TODO: handle arguments for start, stop, restart, and reload
 
     with context:
         serve()
