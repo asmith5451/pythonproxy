@@ -1,9 +1,7 @@
-import sys
 import os
-import grp
+import sys
 import signal
 import daemon
-from daemon import runner
 from lockfile.pidlockfile import PIDLockFile
 
 from .server import (
