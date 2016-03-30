@@ -1,6 +1,6 @@
 import socketserver
 import socket
-from .request import ProxyRequestHandler
+from request import ProxyRequestHandler
 import sys
 # https://www.youtube.com/watch?v=3r8s6hrssh8
 
