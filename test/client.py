@@ -21,7 +21,6 @@ try:
     print('receiving data', file=sys.stderr)
     while True:
         chunk = sock.recv(1024)
-        print('t: {}'.format(chunk.decode('utf-8')), file=sys.stderr)
         if(len(chunk) == 0):
             break
         message.extend(chunk)
