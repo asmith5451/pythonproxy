@@ -1,3 +1,4 @@
+import os
 import socketserver
 import socket
 
@@ -13,7 +14,7 @@ server = None
 def serve():
     import configparser
     config = configparser.ConfigParser()
-    config.read('./server.ini')
+    config.read(os.path.join('conf', 'server.ini'))
     host = config['proxy']['host']
     port = int(config['proxy']['port'])
     dhost = config['proxy']['dhost']

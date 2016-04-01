@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-kill -s SIGTERM `cat /tmp/echidna.pid` 
+kill -s SIGTERM `cat ~/.echidna/echidna.pid` 
