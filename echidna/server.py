@@ -15,6 +15,7 @@ server = None
 
 
 def serve():
+    import configparser
     config = configparser.ConfigParser()
     config.read('./server.ini')
     host = config['proxy']['host']
