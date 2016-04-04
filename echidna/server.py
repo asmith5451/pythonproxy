@@ -15,15 +15,17 @@ server = None
 
 
 def serve():
-    import configparser
-    config = configparser.ConfigParser()
-    config.read('./server.ini')
-    host = config['proxy']['host']
-    port = int(config['proxy']['port'])
-    dhost = config['proxy']['dhost']
-    dport = int(config['proxy']['dport'])
-    src = (host, port)
+    #import configparser
+    #config = configparser.ConfigParser()
+    #config.read('./server.ini')
+    #host = config['proxy']['host']
+    #port = int(config['proxy']['port'])
+    #dhost = config['proxy']['dhost']
+    #dport = int(config['proxy']['dport'])
+    config = SqlReader()
+    host, port, dhost, dport = config.return_record()
     dst = (dhost, dport)
+    src = (host, port)
 
     global server
     print("setup called", file=sys.stderr)
