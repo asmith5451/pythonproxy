@@ -10,8 +10,10 @@ import sys
 # https://www.youtube.com/watch?v=3r8s6hrssh8
 
 server = None
+
+
 def serve():
-    import configparser
+    import sqlreader
     config = configparser.ConfigParser()
     config.read('./server.ini')
     host = config['proxy']['host']
@@ -26,14 +28,17 @@ def serve():
     server = ProxyServer(src, dst, ProxyRequestHandler)
     server.serve_forever()
 
+
 def teardown():
     print("teardown called", file=sys.stderr)
     server.shutdown()
+
 
 def reload_config():
     print("reload called", file=sys.stderr)
     server.shutdown()
     server.serve_forever()
+
 
 class ProxyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def __init__(self, server_address, dest_address, handler_class):

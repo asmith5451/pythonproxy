@@ -10,7 +10,8 @@ from .server import (
     reload_config
 )
 
-def main(args = None):
+
+def main(args=None):
     # get arguments from command line if not passed directly
     if args is None:
         args = sys.argv[1:]
