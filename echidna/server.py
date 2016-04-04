@@ -23,6 +23,13 @@ def serve():
     #dhost = config['proxy']['dhost']
     #dport = int(config['proxy']['dport'])
     config = SqlReader()
+    response = config.return_record()
+    for thing in response:
+        host = thing[0]
+        port = thing[1]
+        dhost = thing[2]
+        dport = thing[3]
+        break
     host, port, dhost, dport = config.return_record()
     dst = (dhost, dport)
     src = (host, port)
