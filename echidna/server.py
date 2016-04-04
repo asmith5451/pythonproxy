@@ -3,8 +3,10 @@ import socket
 
 if __name__ == '__main__':
     from request import ProxyRequestHandler
+    from sqlreader import SqlReader, SqlWriter
 else:
     from .request import ProxyRequestHandler
+    from .sqlreader import SqlReader, SqlWriter
 
 import sys
 # https://www.youtube.com/watch?v=3r8s6hrssh8
@@ -13,7 +15,6 @@ server = None
 
 
 def serve():
-    import sqlreader
     config = configparser.ConfigParser()
     config.read('./server.ini')
     host = config['proxy']['host']
