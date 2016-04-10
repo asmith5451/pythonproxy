@@ -16,7 +16,6 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMA
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
-
 import logging
 import sys
 import socketserver
@@ -24,57 +23,62 @@ import socket
 import select
 
 class ProxyRequestHandler(socketserver.BaseRequestHandler):
-    # 
+    #
     def __init__(self, request, client_address, server):
+        self.sock = create_socket()
         super().__init__(request, client_address, server)
         return
-    # 
+    #
     def setup(self):
-        host, port = self.server.dest_address
-        print('connecting to {}:{}'.format(host, port), file=sys.stderr)
-        host = socket.gethostbyname(host)
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.sock.connect((host, port))
-        print('connected to {}:{}'.format(host, port), file=sys.stderr)
+        self.connect(self.sock, *self.server.dest_address)
         return super().setup()
     #
+    def connect(self, sock, host, port):
+        print('connecting to {}:{}'.format(host, port), file=sys.stderr)
+        sock.connect(finalize_destination(host, port))
+    #
     def handle(self):
-        ss = select.select
-
         print('relaying message', file=sys.stderr)
-
-        # relay message
+        timeout = 0.1
+        
+        # accquire message
         message = bytearray()
-        while True:
-            inwait, outwait, errwait = ss([self.request], [self.request], [])
-            chunk = None
-            for self.request in inwait:
-                chunk = self.request.recv(1024)
-                #self.sock.sendall(chunk)
-                message.extend(chunk)
-            if(chunk == None or len(chunk) == 0):
-                break
-
-        # send message to destination
+        for chunk in network_read(self.request, timeout):
+            message.extend(chunk)
+       
+        # relay message
         self.sock.sendall(message)
 
         print('relaying response', file=sys.stderr)
-
+        
+        # accquire response
+        response = bytearray()
+        for chunk in network_read(self.sock, timeout):
+            response.extend(chunk)
+        
         # relay response
-        message = bytearray()
-        while True:
-            chunk = self.sock.recv(1024)
-            #self.request.sendall(chunk)
-            message.extend(chunk)
-            if(len(chunk) == 0):
-                break
-
-        # send response back
-        self.request.sendall(message)
+        self.request.sendall(response)
 
         print('relay complete', file=sys.stderr)
-        return
     #
     def finish(self):
         self.sock.close()
         return super().finish()
+
+def create_socket():
+    return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+def finalize_destination(host, port):
+    return (socket.gethostbyname(host), port);
+
+def network_read(sock, timeout):
+    while True:
+        in_wait, out_wait, err_wait = select.select([sock], [], [], timeout)
+        chunk = None
+        
+        for s in in_wait:
+           chunk = s.recv(1024) 
+           yield chunk
+        
+        if(chunk == None or len(chunk) == 0):
+            break

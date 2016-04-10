@@ -29,8 +29,8 @@ class SqlReader:
         self.c = self.conn.cursor()
 
     def return_record(self):
-        record = self.c.execute("SELECT servers.srcip, servers.srcport, owners.destip, servers.destport "
-                                "FROM servers JOIN owners ON servers.ownersid = owners.id LIMIT 1")
+        record = self.c.execute("SELECT servers.host, servers.src_port, owners.host, servers.dst_port "
+                                "FROM servers JOIN owners ON servers.owner = owners.id LIMIT 1")
         return record
 
 
