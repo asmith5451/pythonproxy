@@ -16,59 +16,38 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMA
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
-
-import socketserver
-import socket
-
-if __name__ == '__main__':
-    from request import ProxyRequestHandler
-    from sqlreader import SqlReader, SqlWriter
-else:
-    from .request import ProxyRequestHandler
-    from .sqlreader import SqlReader, SqlWriter
-
-import sys
 # https://www.youtube.com/watch?v=3r8s6hrssh8
+import sys
+import socket
+import socketserver
+from contextlib import contextmanager
 
-server = None
+from .request import ProxyRequestHandler
+from .settings import Settings
 
+@contextmanager
+def server():
+    svr = make_server()
+    yield svr
+    svr.shutdown()
 
-def serve():
-    #import configparser
-    #config = configparser.ConfigParser()
-    #config.read('./server.ini')
-    #host = config['proxy']['host']
-    #port = int(config['proxy']['port'])
-    #dhost = config['proxy']['dhost']
-    #dport = int(config['proxy']['dport'])
-    config = SqlReader()
-    response = config.return_record()
-    for thing in response:
-        host = thing[0]
-        port = int(thing[1])
-        dhost = thing[2]
-        dport = int(thing[3])
-        break
-    dst = (dhost, dport)
+def serve(server):
+    server.serve_forever()
+    
+def make_server():
+    settings = Settings()
+    
+    for server_conf in settings.servers():
+        host = server_conf[0]
+        port = server_conf[1]
+        dhost = server_conf[2]
+        dport = server_conf[3]
+        
     src = (host, port)
-
-    global server
-    print("setup called", file=sys.stderr)
-    server = ProxyServer(src, dst, ProxyRequestHandler)
-    server.serve_forever()
-
-
-def teardown():
-    print("teardown called", file=sys.stderr)
-    server.shutdown()
-
-
-def reload_config():
-    print("reload called", file=sys.stderr)
-    server.shutdown()
-    server.serve_forever()
-
-
+    dst = (dhost, dport)
+    
+    return ProxyServer(src, dst, ProxyRequestHandler)
+    
 class ProxyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def __init__(self, server_address, dest_address, handler_class):
         host, port = server_address
@@ -77,9 +56,3 @@ class ProxyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
         super().__init__(server_address, handler_class)
         self.dest_address = dest_address
         return
-
-if __name__ == '__main__':
-    try:
-        serve()
-    except KeyboardInterrupt:
-        teardown()

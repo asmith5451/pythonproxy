@@ -18,35 +18,25 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import os
 import sys
-import signal
 import daemon
 
 from .pidfile import pidfile
-
-from .server import (
-    serve,
-    teardown,
-    reload_config
-)
+from .server import (server, serve)
 
 def main(args=None):
     # get arguments from command line if not passed directly
     if args is None:
         args = sys.argv[1:]
 
+    # create daemon context
     context = daemon.DaemonContext(
         working_directory = os.path.dirname(__file__),
         pidfile = pidfile('/tmp/echidna.pid')
     )
 
-    context.signal_map = {
-        signal.SIGTERM: teardown,
-        signal.SIGHUP: 'terminate',
-        signal.SIGUSR1: reload_config
-    }
-
-    with context:
-        serve()
+    # create server and begin listenning
+    with context, server() as s:
+        serve(s)
 
 if __name__ == "__main__":
     main()
