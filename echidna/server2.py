@@ -16,37 +16,3 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMA
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
-import os
-import sys
-import signal
-import daemon
-
-from .pidfile import pidfile
-
-from .server import (
-    serve,
-    teardown,
-    reload_config
-)
-
-def main(args=None):
-    # get arguments from command line if not passed directly
-    if args is None:
-        args = sys.argv[1:]
-
-    context = daemon.DaemonContext(
-        working_directory = os.path.dirname(__file__),
-        pidfile = pidfile('/tmp/echidna.pid')
-    )
-
-    context.signal_map = {
-        signal.SIGTERM: teardown,
-        signal.SIGHUP: 'terminate',
-        signal.SIGUSR1: reload_config
-    }
-
-    with context:
-        serve()
-
-if __name__ == "__main__":
-    main()

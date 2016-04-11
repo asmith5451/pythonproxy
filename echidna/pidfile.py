@@ -17,36 +17,34 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import os
-import sys
-import signal
-import daemon
+import errno
+from contextlib import contextmanager
 
-from .pidfile import pidfile
+class PIDFileError(Exception):
+    pass
 
-from .server import (
-    serve,
-    teardown,
-    reload_config
-)
+@contextmanager
+def pidfile(path):
+    write_pidfile(path)
+    yield
+    remove_pidfile(path)
 
-def main(args=None):
-    # get arguments from command line if not passed directly
-    if args is None:
-        args = sys.argv[1:]
+def write_pidfile(path):
+    if os.path.isfile(path):
+        raise PIDFileError('PID file already exists')
+    
+    with open(path, 'w', 0o644) as file:
+        file.write('{:d}'.format(os.getpid()))
 
-    context = daemon.DaemonContext(
-        working_directory = os.path.dirname(__file__),
-        pidfile = pidfile('/tmp/echidna.pid')
-    )
+def remove_pidfile(path):
+    if not os.path.isfile(path):
+        raise PIDFileError('PID file does not exist.')
+    
+    if not os.getpid() == read_pidfile(path):
+        raise PIDFileError('The PID file is not for this process.')
+    
+    os.remove(path)
 
-    context.signal_map = {
-        signal.SIGTERM: teardown,
-        signal.SIGHUP: 'terminate',
-        signal.SIGUSR1: reload_config
-    }
-
-    with context:
-        serve()
-
-if __name__ == "__main__":
-    main()
+def read_pidfile(path):
+    with open(path, 'r') as file:
+        return int(file.readline().strip())

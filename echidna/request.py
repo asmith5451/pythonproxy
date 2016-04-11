@@ -25,41 +25,28 @@ import select
 class ProxyRequestHandler(socketserver.BaseRequestHandler):
     #
     def __init__(self, request, client_address, server):
-        self.sock = create_socket()
         super().__init__(request, client_address, server)
         return
     #
     def setup(self):
+        self.sock = create_socket()
         self.connect(self.sock, *self.server.dest_address)
         return super().setup()
     #
     def connect(self, sock, host, port):
-        print('connecting to {}:{}'.format(host, port), file=sys.stderr)
         sock.connect(finalize_destination(host, port))
     #
     def handle(self):
-        print('relaying message', file=sys.stderr)
+        # TODO: tune timeout for real-world application
         timeout = 0.1
         
-        # accquire message
-        message = bytearray()
-        for chunk in network_read(self.request, timeout):
-            message.extend(chunk)
-       
         # relay message
+        message = proxy_readall(self.request, timeout)
         self.sock.sendall(message)
-
-        print('relaying response', file=sys.stderr)
-        
-        # accquire response
-        response = bytearray()
-        for chunk in network_read(self.sock, timeout):
-            response.extend(chunk)
         
         # relay response
+        response = proxy_readall(self.sock, timeout)
         self.request.sendall(response)
-
-        print('relay complete', file=sys.stderr)
     #
     def finish(self):
         self.sock.close()
@@ -71,7 +58,15 @@ def create_socket():
 def finalize_destination(host, port):
     return (socket.gethostbyname(host), port);
 
+def proxy_readall(sock, timeout):
+    message = bytearray()
+    for chunk in network_read(sock, timeout):
+        message.extend(chunk)
+    return message
+
 def network_read(sock, timeout):
+    # TODO: build logic that handles XML data instead of guessing that the
+    # connection is over by weather data was recieved.
     while True:
         in_wait, out_wait, err_wait = select.select([sock], [], [], timeout)
         chunk = None
