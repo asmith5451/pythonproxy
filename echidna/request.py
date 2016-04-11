@@ -66,7 +66,7 @@ def proxy_readall(sock, timeout):
 
 def network_read(sock, timeout):
     # TODO: build logic that handles XML data instead of guessing that the
-    # connection is over by weather data was recieved.
+    # connection is over by whether data was recieved.
     while True:
         in_wait, out_wait, err_wait = select.select([sock], [], [], timeout)
         chunk = None
