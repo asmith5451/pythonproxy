@@ -21,7 +21,7 @@ import sys
 import daemon
 
 from .pidfile import pidfile
-from .server import (server, serve)
+from .server import (servers, serve)
 
 def main(args=None):
     # get arguments from command line if not passed directly
@@ -35,7 +35,7 @@ def main(args=None):
     )
 
     # create server and begin listenning
-    with context, server() as s:
+    with context, servers() as s:
         serve(s)
 
 if __name__ == "__main__":

@@ -22,49 +22,35 @@ import socketserver
 import socket
 import select
 
+from contextlib import contextmanager
+
+#
 class ProxyRequestHandler(socketserver.BaseRequestHandler):
-    #
-    def __init__(self, request, client_address, server):
-        super().__init__(request, client_address, server)
-        return
-    #
-    def setup(self):
-        self.sock = create_socket()
-        self.connect(self.sock, *self.server.dest_address)
-        return super().setup()
-    #
-    def connect(self, sock, host, port):
-        sock.connect(finalize_destination(host, port))
-    #
     def handle(self):
-        # TODO: tune timeout for real-world application
-        timeout = 0.1
-        
-        # relay message
-        message = proxy_readall(self.request, timeout)
-        self.sock.sendall(message)
-        
-        # relay response
-        response = proxy_readall(self.sock, timeout)
-        self.request.sendall(response)
-    #
-    def finish(self):
-        self.sock.close()
-        return super().finish()
+        with standard_socket(self.server.dest_address) as sock:
+            # relay message
+            relay(self.request, sock)
+            
+            # relay response
+            relay(sock, self.request)
 
-def create_socket():
-    return socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+@contextmanager
+def standard_socket(address):
+    # setup
+    sock = socket.create_connection(address)
+    yield sock
+    
+    # teardown
+    sock.close()
 
-def finalize_destination(host, port):
-    return (socket.gethostbyname(host), port);
+#
+def relay(src, dst):
+    for chunk in xml_read(src):
+        dst.sendall(chunk)
 
-def proxy_readall(sock, timeout):
-    message = bytearray()
-    for chunk in network_read(sock, timeout):
-        message.extend(chunk)
-    return message
-
-def network_read(sock, timeout):
+#
+def xml_read(sock, timeout = 0.01):
+    # TODO: tune timeout for real-world application
     # TODO: build logic that handles XML data instead of guessing that the
     # connection is over by whether data was recieved.
     while True:

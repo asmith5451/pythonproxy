@@ -24,35 +24,34 @@ from contextlib import contextmanager
 
 from .request import ProxyRequestHandler
 from .settings import Settings
+    
+class ProxyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    def __init__(self, server_address, dest_address, handler_class):
+        self.dest_address = dest_address
+        super().__init__(server_address, handler_class)
+        return
+
+# serve all of the servers
+# TODO: add multi-threaded launch
+def serve(servers):
+    for svr in servers:
+        svr.serve_forever()
 
 @contextmanager
-def server():
-    svr = make_server()
-    yield svr
-    svr.shutdown()
-
-def serve(server):
-    server.serve_forever()
-    
-def make_server():
+def servers():
     settings = Settings()
-    
-    for server_conf in settings.servers():
-        host = server_conf[0]
-        port = server_conf[1]
-        dhost = server_conf[2]
-        dport = server_conf[3]
+    servers = map(make_server, settings.servers())
+    yield servers
+    for svr in servers:
+        svr.shutdown()
+
+def make_server(conf):
+    host = conf[0]
+    port = conf[1]
+    dhost = conf[2]
+    dport = conf[3]
         
     src = (host, port)
     dst = (dhost, dport)
     
     return ProxyServer(src, dst, ProxyRequestHandler)
-    
-class ProxyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    def __init__(self, server_address, dest_address, handler_class):
-        host, port = server_address
-        host = socket.gethostbyname(host)
-        server_address = (host, port)
-        super().__init__(server_address, handler_class)
-        self.dest_address = dest_address
-        return
