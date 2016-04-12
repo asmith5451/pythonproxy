@@ -29,32 +29,18 @@ class Settings:
         self.db_path = os.path.join(dirname, "adam2.sqlite")
         
     def servers(self):
-        with db_cursor(self.db_path) as cursor:
-            try:
-                cursor.execute("SELECT servers.host, servers.src_port, owners.host, servers.dst_port "
-                               "FROM servers JOIN owners ON servers.owner = owners.id LIMIT 1")
-            except sqlite3.DatabaseError as err:
-                raise SettingsError(err)
-            
-            for record in cursor:
-                yield record
+        yield from self.query(
+            "SELECT servers.host, servers.src_port, owners.host, servers.dst_port "
+            "FROM servers JOIN owners ON servers.owner = owners.id LIMIT 1")
     
     def owners(self):
-        with db_cursor(self.db_path) as cursor:
-            cursor.execute("SELECT owners.name, owners.host FROM owners")
-        
-            for record in cursor:
-                yield record
+        yield from self.query(
+            "SELECT owners.name, owners.host FROM owners")
     
     def get_dest(self, port):
-        with db_cursor(self.db_path) as cursor:
-            cursor.execute("SELECT owners.host, servers.dst_port AS port "
-                           "FROM servers JOIN owners ON servers.owner = owner.id LIMIT 1")
-            
-            for record in cursor:
-                return record
-
-        return
+        yield from self.query(
+            "SELECT owners.host, servers.dst_port AS port "
+            "FROM servers JOIN owners ON servers.owner = owner.id LIMIT 1")
     
     def add_server(self, name, host, port, owner, dst_port):
         return
@@ -67,6 +53,15 @@ class Settings:
     
     def remove_owner_by_name(self, name):
         return
+    
+    def query(self, query):
+        with db_cursor(self.db_path) as cursor:
+            try:
+                cursor.execute(query)
+            except sqlite3.DatabaseError as err:
+                raise SettingsError(err)
+            for record in cursor:
+                yield record    
 
 @contextmanager
 def db_cursor(file):

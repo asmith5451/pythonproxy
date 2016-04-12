@@ -36,11 +36,10 @@ def main(args=None):
     handler = setup_handler(os.path.join(working_directory, "echidna.log"))
     logger = setup_logger("echidna", handler, logging.DEBUG)
     
+    # this logic should be encapuslated into the new daemon runner class
     logger.info("starting daemon")
    
     try:
-        # this logic should be encapuslated into the new daemon runner class
-        
         # servers have to be created inside the daemon context, but need to be
         # accessible outside of it for the teardown function.
         servers = None
