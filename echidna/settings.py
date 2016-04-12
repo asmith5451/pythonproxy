@@ -19,14 +19,20 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import sqlite3
 from contextlib import contextmanager
 
+class SettingsError(Exception):
+    pass
+
 class Settings:
     def __init__(self):
         self.db_path = 'adam2.sqlite'
         
     def servers(self):
         with db_cursor(self.db_path) as cursor:
-            cursor.execute("SELECT servers.host, servers.src_port, owners.host, servers.dst_port "
-                           "FROM servers JOIN owners ON servers.owner = owners.id LIMIT 1")
+            try:
+                cursor.execute("SELECT servers.host, servers.src_port, owners.host, servers.dst_port "
+                               "FROM servers JOIN owners ON servers.owner = owners.id LIMIT 1")
+            except sqlite3.DatabaseError as err:
+                raise SettingsError(err)
             
             for record in cursor:
                 yield record
@@ -62,6 +68,10 @@ class Settings:
 
 @contextmanager
 def db_cursor(file):
-    connection = sqlite3.connect(file)
+    connection = None
+    try:
+        connection = sqlite3.connect(file)
+    except:
+        raise SettingsError("failed to open configuration database")
     yield connection.cursor()
     connection.close()

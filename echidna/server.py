@@ -20,11 +20,15 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import sys
 import socket
 import socketserver
+import logging
 from contextlib import contextmanager
 
 from .request import ProxyRequestHandler
-from .settings import Settings
-    
+from .settings import (Settings, SettingsError)
+
+class ProxyServerError(Exception):
+    pass
+
 class ProxyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     def __init__(self, server_address, dest_address, handler_class):
         self.dest_address = dest_address
@@ -33,19 +37,29 @@ class ProxyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 
 # serve all of the servers
 # TODO: add multi-threaded launch
-def serve(servers):
-    for svr in servers:
+def serve(server_list):
+    for svr in server_list:
         svr.serve_forever()
 
 @contextmanager
 def servers():
-    settings = Settings()
-    servers = map(make_server, settings.servers())
-    yield servers
-    for svr in servers:
+    logger = logging.getLogger("echidna.server")
+    try:
+        settings = Settings()
+        svrs = [make_server(svr) for svr in settings.servers()]
+    except SettingsError as err:
+        logger.error("error: %s", err)
+    
+    yield svrs
+    
+    logger.debug("servers cleanup")
+    
+    for svr in svrs:
         svr.shutdown()
-
+    
 def make_server(conf):
+    logger = logging.getLogger("echidna.server")
+    logger.debug("creating server object")
     host = conf[0]
     port = conf[1]
     dhost = conf[2]

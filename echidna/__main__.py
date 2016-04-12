@@ -19,24 +19,46 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 import os
 import sys
 import daemon
+import logging
 
 from .pidfile import pidfile
 from .server import (servers, serve)
 
 def main(args=None):
+    working_directory = os.path.dirname(__file__)
+    
     # get arguments from command line if not passed directly
     if args is None:
         args = sys.argv[1:]
+    
+    logger = logging.getLogger("echidna")
+    
+    fm = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh = logging.FileHandler(filename = os.path.join(working_directory, "echidna.log"))
+    fh.setFormatter(fm)
+    fh.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG)
+    
+    logger.addHandler(fh)
 
     # create daemon context
     context = daemon.DaemonContext(
-        working_directory = os.path.dirname(__file__),
-        pidfile = pidfile('/tmp/echidna.pid')
+        working_directory = working_directory,
+        pidfile = pidfile('/tmp/echidna.pid'),
+        files_preserve = [fh.stream]
     )
-
+    
+    logger.debug("starting daemon")
+    
     # create server and begin listenning
-    with context, servers() as s:
-        serve(s)
+    try: 
+        with context, servers() as s:
+            logger.debug("serving servers!")
+            serve(s)
+    except Exception as err:
+        logger.debug("error: %s", err)
+    
+    logger.debug("finishing daemon")
 
 if __name__ == "__main__":
     main()
