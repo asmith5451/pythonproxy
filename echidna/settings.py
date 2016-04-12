@@ -17,6 +17,7 @@ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import sqlite3
+import os
 from contextlib import contextmanager
 
 class SettingsError(Exception):
@@ -24,7 +25,8 @@ class SettingsError(Exception):
 
 class Settings:
     def __init__(self):
-        self.db_path = 'adam2.sqlite'
+        dirname = os.path.dirname(__file__)
+        self.db_path = os.path.join(dirname, "adam2.sqlite")
         
     def servers(self):
         with db_cursor(self.db_path) as cursor:

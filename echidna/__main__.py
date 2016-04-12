@@ -18,11 +18,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import os
 import sys
+import signal
 import daemon
 import logging
 
 from .pidfile import pidfile
-from .server import (servers, serve)
+from .server import (build_servers, serve_servers, close_servers)
 
 def main(args=None):
     working_directory = os.path.dirname(__file__)
@@ -31,34 +32,55 @@ def main(args=None):
     if args is None:
         args = sys.argv[1:]
     
-    logger = logging.getLogger("echidna")
+    # setup logging
+    handler = setup_handler(os.path.join(working_directory, "echidna.log"))
+    logger = setup_logger("echidna", handler, logging.DEBUG)
     
-    fm = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh = logging.FileHandler(filename = os.path.join(working_directory, "echidna.log"))
-    fh.setFormatter(fm)
-    fh.setLevel(logging.DEBUG)
-    logger.setLevel(logging.DEBUG)
+    logger.info("starting daemon")
+   
+    try:
+        # this logic should be encapuslated into the new daemon runner class
+        
+        # servers have to be created inside the daemon context, but need to be
+        # accessible outside of it for the teardown function.
+        servers = None
+        
+        # scoped teardown
+        def teardown(signum, frame):
+            close_servers(servers)
+        
+        # create daemon context
+        context = daemon.DaemonContext(
+            working_directory = working_directory,
+            pidfile = pidfile('/tmp/echidna.pid'),
+            files_preserve = [handler.stream],
+            signal_map = {
+                signal.SIGTERM: teardown,
+                signal.SIGHUP: 'terminate'
+            }
+        )
+        
+        # create servers and begin listenning
+        with context:
+            servers = build_servers()
+            serve_servers(servers)
     
-    logger.addHandler(fh)
-
-    # create daemon context
-    context = daemon.DaemonContext(
-        working_directory = working_directory,
-        pidfile = pidfile('/tmp/echidna.pid'),
-        files_preserve = [fh.stream]
-    )
-    
-    logger.debug("starting daemon")
-    
-    # create server and begin listenning
-    try: 
-        with context, servers() as s:
-            logger.debug("serving servers!")
-            serve(s)
     except Exception as err:
-        logger.debug("error: %s", err)
+        logger.info("unhandled error: %s", err)
     
-    logger.debug("finishing daemon")
+    logger.info("daemon stopped")
+
+def setup_handler(file):
+    fm = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh = logging.FileHandler(filename = file)
+    fh.setFormatter(fm)
+    return fh
+    
+def setup_logger(name, handler, level):
+    logger = logging.getLogger(name)
+    logger.addHandler(handler)
+    logger.setLevel(level)
+    return logger
 
 if __name__ == "__main__":
     main()
