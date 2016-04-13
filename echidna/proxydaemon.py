@@ -71,15 +71,17 @@ class ProxyDaemon(object):
     
     def __finalize_servers(self):
         for server in self.servers:
-            self.logger.debug("cleanup: %s", server.server_address)
+            self.logger.debug("cleanup: %s -> %s", server.server_address, server.dest_address)
             server.server_close()
     
     def teardown(self, signum, frame):
+        self.logger.debug("stopping listeners")
         for server in self.servers:
-            self.logger.debug("stopping: %s", server.server_address)
+            self.logger.debug("stopping: %s -> %s", server.server_address, server.dest_address)
             server.shutdown()
     
     def run(self):
+        self.logger.debug("starting listeners")
         threads = [make_server_thread(s, self.logger) for s in self.servers]
         for thread in threads:
             thread.start()
@@ -88,7 +90,7 @@ class ProxyDaemon(object):
             thread.join()
 
 def make_server_thread(server, logger):
-    logger.debug("starting: %s", server.server_address)
+    logger.debug("starting: %s -> %s", server.server_address, server.dest_address)
     return threading.Thread(target=server.serve_forever)
 
 def make_server_node(conf):

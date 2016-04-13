@@ -26,7 +26,7 @@ class SettingsError(Exception):
 class Settings:
     def __init__(self, working_directory):
         self.db_path = os.path.join(working_directory, 'adam2.sqlite')
-        
+    
     def servers(self):
         yield from self.query(
             "SELECT servers.host, servers.src_port, owners.host, servers.dst_port "
