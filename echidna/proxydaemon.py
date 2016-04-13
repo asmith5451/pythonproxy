@@ -24,6 +24,7 @@ import socket
 import socketserver
 import logging
 import daemon
+import threading
 
 from .pidfile import pidfile
 from .server import ProxyServer
@@ -55,7 +56,7 @@ class ProxyDaemon(object):
         self.context.__enter__()
         
         self.logger.debug("creating listeners")
-        self.servers = self._make_servers()
+        self.servers = [make_server_node(s) for s in self.settings.servers()]
         return self
     
     def __exit__(self, type, value, traceback):
@@ -63,32 +64,33 @@ class ProxyDaemon(object):
             self.logger.error("UNHANDLED EXCEPTION", exc_info=(type, value, traceback))
         
         self.logger.debug("cleanup listeners")
-        self._finalize_servers()
+        self.__finalize_servers()
         
         self.logger.info("exiting daemon context")
         self.context.__exit__()
     
-    def _make_servers(self):
-        return [make_server_node(s) for s in self.settings.servers()]
-    
-    def _finalize_servers(self):
-        self.logger.debug("cleanup: %s", self.servers[0].server_address)
-        # TODO: uncomment this whe shutdown bug resolved
-        #self.servers[0].server_close()
+    def __finalize_servers(self):
+        for server in self.servers:
+            self.logger.debug("cleanup: %s", server.server_address)
+            server.server_close()
     
     def teardown(self, signum, frame):
-        self.logger.debug("stopping: %s", self.servers[0].server_address)
-        # TODO: research why shutdown() causes hang
-        #self.servers[0].shutdown()
-        self.servers[0].server_close()
+        for server in self.servers:
+            self.logger.debug("stopping: %s", server.server_address)
+            server.shutdown()
     
     def run(self):
-        # todo multi-thread the server startups
-        self.logger.debug("starting: %s", self.servers[0].server_address)
-        # TODO: research if it's safe to ignore the ValueError caused by
-        # the call to server.server_close()
-        self.servers[0].serve_forever() 
- 
+        threads = [make_server_thread(s, self.logger) for s in self.servers]
+        for thread in threads:
+            thread.start()
+        
+        for thread in threads:
+            thread.join()
+
+def make_server_thread(server, logger):
+    logger.debug("starting: %s", server.server_address)
+    return threading.Thread(target=server.serve_forever)
+
 def make_server_node(conf):
     # TODO: make this pretty
     host = conf[0]
