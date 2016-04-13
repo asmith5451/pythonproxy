@@ -73,10 +73,13 @@ class ProxyDaemon(object):
     
     def _finalize_servers(self):
         self.logger.debug("cleanup: %s", self.servers[0].server_address)
-        self.servers[0].server_close()
+        # TODO: uncomment this whe shutdown bug resolved
+        #self.servers[0].server_close()
     
     def teardown(self, signum, frame):
         self.logger.debug("stopping: %s", self.servers[0].server_address)
+        # TODO: research why shutdown() causes hang
+        #self.servers[0].shutdown()
         self.servers[0].server_close()
     
     def run(self):
