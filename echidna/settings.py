@@ -30,7 +30,7 @@ class Settings:
     def servers(self):
         yield from self.query(
             "SELECT servers.host, servers.src_port, owners.host, servers.dst_port "
-            "FROM servers JOIN owners ON servers.owner = owners.id LIMIT 1")
+            "FROM servers JOIN owners ON servers.owner = owners.id")
     
     def owners(self):
         yield from self.query(
@@ -39,7 +39,7 @@ class Settings:
     def get_dest(self, port):
         yield from self.query(
             "SELECT owners.host, servers.dst_port AS port "
-            "FROM servers JOIN owners ON servers.owner = owner.id LIMIT 1")
+            "FROM servers JOIN owners ON servers.owner = owner.id")
     
     def add_server(self, name, host, port, owner, dst_port):
         return

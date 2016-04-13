@@ -4,7 +4,7 @@ import sys
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 bind_address = socket.gethostbyname(socket.getfqdn())
-bind_port = 8080
+bind_port = 8082
 
 print('connecting to server {} on port {}'.format(bind_address, bind_port),
       file=sys.stderr)
