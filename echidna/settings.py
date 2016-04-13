@@ -24,9 +24,8 @@ class SettingsError(Exception):
     pass
 
 class Settings:
-    def __init__(self):
-        dirname = os.path.dirname(__file__)
-        self.db_path = os.path.join(dirname, "adam2.sqlite")
+    def __init__(self, working_directory):
+        self.db_path = os.path.join(working_directory, 'adam2.sqlite')
         
     def servers(self):
         yield from self.query(

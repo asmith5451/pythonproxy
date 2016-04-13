@@ -18,68 +18,21 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 import os
 import sys
-import signal
-import daemon
-import logging
 
-from .pidfile import pidfile
-from .server import (build_servers, serve_servers, close_servers)
+from .proxydaemon import ProxyDaemon
 
 def main(args=None):
-    working_directory = os.path.dirname(__file__)
     
     # get arguments from command line if not passed directly
     if args is None:
         args = sys.argv[1:]
     
-    # setup logging
-    handler = setup_handler(os.path.join(working_directory, "echidna.log"))
-    logger = setup_logger("echidna", handler, logging.DEBUG)
+    working_directory = os.path.dirname(__file__)
+    pid_directory = "/tmp"
     
-    # this logic should be encapuslated into the new daemon runner class
-    logger.info("starting daemon")
-   
-    try:
-        # servers have to be created inside the daemon context, but need to be
-        # accessible outside of it for the teardown function.
-        servers = None
-        
-        # scoped teardown
-        def teardown(signum, frame):
-            close_servers(servers)
-        
-        # create daemon context
-        context = daemon.DaemonContext(
-            working_directory = working_directory,
-            pidfile = pidfile('/tmp/echidna.pid'),
-            files_preserve = [handler.stream],
-            signal_map = {
-                signal.SIGTERM: teardown,
-                signal.SIGHUP: 'terminate'
-            }
-        )
-        
-        # create servers and begin listenning
-        with context:
-            servers = build_servers()
-            serve_servers(servers)
+    with ProxyDaemon(working_directory, pid_directory) as daemon:
+        daemon.run()
     
-    except Exception as err:
-        logger.info("unhandled error: %s", err)
-    
-    logger.info("daemon stopped")
-
-def setup_handler(file):
-    fm = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh = logging.FileHandler(filename = file)
-    fh.setFormatter(fm)
-    return fh
-    
-def setup_logger(name, handler, level):
-    logger = logging.getLogger(name)
-    logger.addHandler(handler)
-    logger.setLevel(level)
-    return logger
 
 if __name__ == "__main__":
     main()

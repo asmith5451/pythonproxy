@@ -16,18 +16,7 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMA
 WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
-# https://www.youtube.com/watch?v=3r8s6hrssh8
-import sys
-import socket
 import socketserver
-import logging
-
-from contextlib import contextmanager
-
-from .request import ProxyRequestHandler
-from .settings import (Settings, SettingsError)
-
-logger = logging.getLogger("echidna.server")
 
 class ProxyServerError(Exception):
     pass
@@ -37,42 +26,3 @@ class ProxyServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
         self.dest_address = dest_address
         super().__init__(server_address, handler_class)
         return
-
-# serve all of the servers
-def serve_servers(servers):
-    # TODO: add multi-threaded launch
-    for server in servers:
-        logger.debug("starting: %s", server.server_address)
-        # TODO: research if it's safe to ignore the ValueError caused by
-        # the call to server.server_close()
-        try: server.serve_forever()
-        except ValueError: pass
-
-def close_servers(servers):
-    for server in servers:
-        logger.debug("stopping: %s", server.server_address)
-        # TODO: research why server.shutdown() hangs instead of exiting cleanly
-        server.server_close()
-
-def build_servers():
-    servers = None
-    try:
-        settings = Settings()
-        servers = [make_server(svr) for svr in settings.servers()]
-        
-    except SettingsError as err:
-        logger.error("settings error: %s", err)
-   
-    return servers
-
-def make_server(conf):
-    # TODO: make this pretty
-    host = conf[0]
-    port = conf[1]
-    dhost = conf[2]
-    dport = conf[3]
-        
-    src = (host, port)
-    dst = (dhost, dport)
-    
-    return ProxyServer(src, dst, ProxyRequestHandler)
