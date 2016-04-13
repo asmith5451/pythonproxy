@@ -90,8 +90,11 @@ class ProxyDaemon(object):
             thread.join()
 
 def make_server_thread(server, logger):
+    return threading.Thread(target=server_thread, args=(server,logger))
+
+def server_thread(server, logger):
     logger.debug("starting: %s -> %s", server.server_address, server.dest_address)
-    return threading.Thread(target=server.serve_forever)
+    server.serve_forever()
 
 def make_server_node(conf):
     # TODO: make this pretty
