@@ -27,12 +27,14 @@ def main(args=None):
     if args is None:
         args = sys.argv[1:]
     
+    # set working directory & pid directory
     working_directory = os.path.dirname(__file__)
     pid_directory = "/tmp"
     
+    # Enter ProxyDaemon context
     with ProxyDaemon(working_directory, pid_directory) as daemon:
-        daemon.run()
-    
+        # Start listenning
+        daemon.run(args)
 
 if __name__ == "__main__":
     main()

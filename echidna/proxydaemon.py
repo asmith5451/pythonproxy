@@ -56,20 +56,21 @@ class ProxyDaemon(object):
         self.context.__enter__()
         
         self.logger.debug("creating listeners")
-        self.servers = [make_server_node(s) for s in self.settings.servers()]
+        self.servers = [make_server(s) for s in self.settings.servers()]
+        
         return self
     
     def __exit__(self, type, value, traceback):
         if type is not None:
             self.logger.error("UNHANDLED EXCEPTION", exc_info=(type, value, traceback))
         
-        self.logger.debug("cleanup listeners")
         self.__finalize_servers()
         
         self.logger.info("exiting daemon context")
         self.context.__exit__()
     
     def __finalize_servers(self):
+        self.logger.debug("cleanup listeners")
         for server in self.servers:
             self.logger.debug("cleanup: %s -> %s", server.server_address, server.dest_address)
             server.server_close()
@@ -80,12 +81,15 @@ class ProxyDaemon(object):
             self.logger.debug("stopping: %s -> %s", server.server_address, server.dest_address)
             server.shutdown()
     
-    def run(self):
+    def run(self, args):
         self.logger.debug("starting listeners")
         threads = [make_server_thread(s, self.logger) for s in self.servers]
+        
+        # start threads
         for thread in threads:
             thread.start()
         
+        # wait for threads to finish
         for thread in threads:
             thread.join()
 
@@ -96,13 +100,13 @@ def server_thread(server, logger):
     logger.debug("starting: %s -> %s", server.server_address, server.dest_address)
     server.serve_forever()
 
-def make_server_node(conf):
+def make_server(conf):
     # TODO: make this pretty
     host = conf[0]
     port = conf[1]
     dhost = conf[2]
     dport = conf[3]
-        
+    
     src = (host, port)
     dst = (dhost, dport)
     
