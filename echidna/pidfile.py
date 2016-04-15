@@ -24,10 +24,10 @@ class PIDFileError(Exception):
     pass
 
 @contextmanager
-def pidfile(path):
-    write_pidfile(path)
+def pidfile(file):
+    write_pidfile(file)
     yield
-    remove_pidfile(path)
+    remove_pidfile(file)
 
 def write_pidfile(path):
     if os.path.isfile(path):

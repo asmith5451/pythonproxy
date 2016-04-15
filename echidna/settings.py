@@ -24,13 +24,17 @@ class SettingsError(Exception):
     pass
 
 class Settings:
-    def __init__(self, working_directory):
-        self.db_path = os.path.join(working_directory, 'adam2.sqlite')
+    def __init__(self, file):
+        self.file = file
     
     def servers(self):
-        yield from self.query(
+        for record in self.query(
             "SELECT servers.host, servers.src_port, owners.host, servers.dst_port "
-            "FROM servers JOIN owners ON servers.owner = owners.id")
+            "FROM servers JOIN owners ON servers.owner = owners.id"):
+                yield {
+                    'source': get_source(record),
+                    'destination': get_destination(record)
+                }
     
     def owners(self):
         yield from self.query(
@@ -54,13 +58,13 @@ class Settings:
         return
     
     def query(self, query):
-        with db_cursor(self.db_path) as cursor:
+        with db_cursor(self.file) as cursor:
             try:
                 cursor.execute(query)
             except sqlite3.DatabaseError as err:
                 raise SettingsError(err)
             for record in cursor:
-                yield record    
+                yield record
 
 @contextmanager
 def db_cursor(file):
@@ -71,3 +75,9 @@ def db_cursor(file):
         raise SettingsError("failed to open configuration database")
     yield connection.cursor()
     connection.close()
+
+def get_source(record):
+    return record[:2]
+
+def get_destination(record):
+    return record[2:]

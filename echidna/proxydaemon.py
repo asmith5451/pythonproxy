@@ -34,17 +34,20 @@ from .settings import Settings
 class ProxyDaemon(object):
     def __init__(self, working_directory, pid_directory):
         # get access to settings
-        self.settings = Settings(working_directory)
+        self.settings = Settings(file_path(working_directory, "adam2.sqlite"))
         
         # setup logging
-        self.logHandler = setup_handler(working_directory)
-        self.logger = setup_logger("echidna", self.logHandler, logging.DEBUG)
+        fh = setup_logfile_handler(file_path(working_directory, "echidna.log"))
+        self.logger = setup_logger(
+            name = 'echidna',
+            handler = fh,
+            level = logging.DEBUG)
         
         # create context
         self.context = daemon.DaemonContext(
             working_directory = working_directory,
-            pidfile = pidfile(os.path.join(pid_directory, 'echidna.pid')),
-            files_preserve = [self.logHandler.stream],
+            pidfile = pidfile(file_path(pid_directory, "echidna.pid")),
+            files_preserve = [fh.stream],
             signal_map = {
                 signal.SIGTERM: self.teardown,
                 signal.SIGHUP: 'terminate'
@@ -56,7 +59,7 @@ class ProxyDaemon(object):
         self.context.__enter__()
         
         self.logger.debug("creating listeners")
-        self.servers = [make_server(s) for s in self.settings.servers()]
+        self.servers = [make_server(s, self.logger) for s in self.settings.servers()]
         
         return self
     
@@ -93,6 +96,10 @@ class ProxyDaemon(object):
         for thread in threads:
             thread.join()
 
+def make_server(conf, logger):
+    logger.debug("creating: %s -> %s", conf['source'], conf['destination'])
+    return ProxyServer(conf['source'], conf['destination'], ProxyRequestHandler)
+
 def make_server_thread(server, logger):
     return threading.Thread(target=server_thread, args=(server,logger))
 
@@ -100,20 +107,8 @@ def server_thread(server, logger):
     logger.debug("starting: %s -> %s", server.server_address, server.dest_address)
     server.serve_forever()
 
-def make_server(conf):
-    # TODO: make this pretty
-    host = conf[0]
-    port = conf[1]
-    dhost = conf[2]
-    dport = conf[3]
-    
-    src = (host, port)
-    dst = (dhost, dport)
-    
-    return ProxyServer(src, dst, ProxyRequestHandler)
-
-def setup_handler(working_directory):
-    f = os.path.join(working_directory, "echidna.log")
+def setup_logfile_handler(file):
+    f = file
     frmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     fh = logging.FileHandler(filename = f)
     fh.setFormatter(frmt)
@@ -124,3 +119,6 @@ def setup_logger(name, handler, level):
     logger.addHandler(handler)
     logger.setLevel(level)
     return logger
+
+def file_path(directory, file):
+    return os.path.join(directory, file)
