@@ -6,8 +6,7 @@ from .errors import DaemonOSEnvironmentError
 
 def compose_tasks(settings):
     tasks = [
-        set_user,
-        set_group_or_groups,
+        set_owner,
         set_creation_mask,
         redirect_standard_io,
         sweep_process_io,
@@ -16,37 +15,19 @@ def compose_tasks(settings):
         detach_or_continue_process]
     return defer_task(run_tasks, settings, tasks)
 
-def set_user(userid = os.getuid()):
-    """ Set the user the process runs as. """
-    os.setuid(userid)
-
-def set_group_or_groups(
-    initgroups = False,
-    userid = os.getuid(),
-    groupid = os.getgid()):
-        """ If we have permissions to set all the groups """
-        try:
-            set_groups(userid, groupid) if initgroups else set_group(groupid)
-        except Exception as exc:
-            raise DaemonOSEnvironmentError(
-                "Unable to change process group ({exc})".format(exc=exc)) from exc
-
-def set_group(groupid = os.getgid()):
-    """  """
-    os.setgid(groupid)
-
-def set_groups(userid = os.getuid(), groupid = os.getgid()):
-        os.initgroups(get_username(userid), groupid)
-
-def set_creation_mask(usermask = 0):
-    """ Set file creation mask when creating a new file. """
-    os.umask(usermask)
+def set_owner(userid = os.getuid(), initgroups = False, groupid = os.getgid()):
+    set_user(userid)
+    set_group_or_groups(userid, initgroups, groupid)
 
 def redirect_standard_io(
     stdin = os.devnull,
     stdout = os.devnull,
     stderr = os.devnull):
         print("redirect standard output")
+
+def set_creation_mask(usermask = 0):
+    """ Set file creation mask when creating a new file. """
+    os.umask(usermask)
 
 def sweep_process_io(files_preserve = []):
     print("sweep process io")
@@ -68,3 +49,23 @@ def detach_or_continue_process(detach = should_detach()):
         fork_then_exit(error_message = "failed first fork")
         os.setsid()
         fork_then_exit(error_message = "failed second fork")
+
+def set_user(userid):
+    """ Set the user the process runs as. """
+    os.setuid(userid)
+
+def set_group_or_groups(userid, initgroups, groupid):
+        """ If we have permissions to set all the groups """
+        try:
+            set_groups(userid, groupid) if initgroups else set_group(groupid)
+        except Exception as exc:
+            raise DaemonOSEnvironmentError(
+                "Unable to change process group ({exc})".format(exc=exc)
+            ) from exc
+
+def set_group(groupid):
+    """  """
+    os.setgid(groupid)
+
+def set_groups(userid, groupid):
+        os.initgroups(get_username(userid), groupid)
