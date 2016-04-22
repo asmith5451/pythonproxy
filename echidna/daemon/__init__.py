@@ -1,0 +1,1 @@
+from .strategy import daemon_init
