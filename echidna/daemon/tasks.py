@@ -17,11 +17,24 @@ from .util.process import  daemon_fork
 
 def compose_all_tasks(settings):
     """ Compose all of the tasks into one task. """
+    """ I am using is a task oriented approach. If any element of the task
+        must happen in order, the task is consolidated. Some tasks do multiple
+        things, but all do as little as possible. Using this design principle,
+        it should be possible to put each task in its own thread and not worry
+        about which completes first. There's some questionable features of the
+        detach_or_continue_process that I am not sure would work in their own
+        thread, but everything else in the list should work.
+        
+        Since I am dealing directly with the OS, I actually need the side
+        effects of the process altering its behavior. Every function called by
+        each task is essentially required to have side effects. Because of this
+        it can't be totally pure, but the functions that orchestrate the tasks
+        themselves can be.
+        """
     tasks = [
         set_owner,
         set_creation_mask,
-        optional_chroot_directory,
-        set_working_directory,
+        set_directories,
         redirect_and_sweep_io,
         optional_prevent_core_dump,
         detach_or_continue_process,
@@ -39,15 +52,13 @@ def set_creation_mask(usermask = 0):
     """ Set file creation mask when creating a new file. """
     change_file_creation_mask(usermask)
 
-def set_working_directory(working_directory = "/"):
-    """ Change the working directory of the process to the specified directory.
+def set_directories(working_directory = "/", chroot_directory = None):
+    """ Change the root directory, and then the working directory for the
+        current process.
         """
-    change_working_directory(working_directory)
-
-def optional_chroot_directory(chroot_directory = None):
-    """ Change the root directory of the process to the specified directory """
     if chroot_directory:
         change_root_directory(chroot_directory)
+    change_working_directory(working_directory)
 
 def redirect_and_sweep_io(
     files_preserve = [],
