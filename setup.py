@@ -9,6 +9,7 @@ setup(name = 'echidna',
           ]
       },
       install_requires = [
-          'python-daemon'
+          'python-daemon',
+          'psutil'
       ]
      )

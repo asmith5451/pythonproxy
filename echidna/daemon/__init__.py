@@ -1,1 +1,1 @@
-from .strategy import daemon_init
+from .strategy import build_daemon_strategy

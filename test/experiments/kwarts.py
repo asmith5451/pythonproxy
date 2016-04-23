@@ -1,15 +1,14 @@
 import time
-from echidna.daemon import daemon_init
+import sys
+from echidna.daemon import build_daemon_strategy
 
 # build daemon initializer
-init = daemon_init()
+daemonize = build_daemon_strategy()
 
 try:
-    # initialize daemon
-    print("starting")
-    init()
-    print("over")
+    daemonize()
 except Exception as exc:
-    print(exc)
+    print("error! {exc}".format(exc = exc))
+    pass
 
-time.sleep(2)
+time.sleep(10)

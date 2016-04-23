@@ -1,6 +1,5 @@
-from .util import defer_task, run_tasks
-from .tasks import compose_tasks
+from .tasks import compose_all_tasks
 
-def daemon_init(**kwargs):
+def build_daemon_strategy(**kwargs):
     """ Return the composed tasks as a callable. """
-    return compose_tasks(kwargs)
+    return compose_all_tasks(kwargs)
