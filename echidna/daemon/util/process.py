@@ -5,7 +5,8 @@ def daemon_fork():
     """ Fork the daemon, and then exit. In the forked process, we create a new
         session which has the property of having no controlling terminal. Then
         we fork the daemon, and exit the parent process, ensring we have no
-        active session, and the process is then a real daemon. """
+        active session, and the process is then a real daemon.
+        """
     fork_then_exit(error_message = "failed first fork")
     os.setsid()
     fork_then_exit(error_message = "failed second fork")

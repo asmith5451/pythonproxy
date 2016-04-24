@@ -1,1 +1,1 @@
-from .strategy import build_daemon_strategy
+from .strategy import daemonize, deferred_daemonize

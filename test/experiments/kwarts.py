@@ -1,9 +1,9 @@
 import time
 import sys
-from echidna.daemon import build_daemon_strategy
+from echidna.daemon import deferred_daemonize
 
 # build daemon initializer
-daemonize = build_daemon_strategy()
+daemonize = deferred_daemonize()
 
 try:
     daemonize()

@@ -1,7 +1,7 @@
 import os
 import sys
 
-from .util.task import defer, run_all
+from .util.task import run_all
 from .util.system import (
     change_user,
     change_group, change_groups,
@@ -39,14 +39,14 @@ def compose_all_tasks(settings):
         optional_prevent_core_dump,
         detach_or_continue_process,
     ]
-    return defer(run_all, settings, tasks)
+    run_all(settings, tasks)
 
 def set_owner(userid = os.getuid(), initgroups = False, groupid = os.getgid()):
     """ Set the effective userid of the process, then set the effective group
         or groups of the process.
         """
-    change_user(userid)
     change_groups(userid, groupid) if initgroups else change_group(groupid)
+    change_user(userid)
 
 def set_creation_mask(usermask = 0):
     """ Set file creation mask when creating a new file. """

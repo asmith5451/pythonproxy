@@ -21,7 +21,7 @@ import sys
 
 from .proxydaemon import ProxyDaemon
 
-def main(args=None):
+def main(args = None):
     
     # get arguments from command line if not passed directly
     if args is None:
