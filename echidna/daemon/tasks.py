@@ -15,7 +15,7 @@ from .util.system import (
 )
 from .util.process import  daemon_fork
 
-def compose_all_tasks(settings):
+def run_tasks(settings):
     """ Compose all of the tasks into one task. """
     """ I am using is a task oriented approach. If any element of the task
         must happen in order, the task is consolidated. Some tasks do multiple
@@ -31,15 +31,14 @@ def compose_all_tasks(settings):
         it can't be totally pure, but the functions that orchestrate the tasks
         themselves can be.
         """
-    tasks = [
+    run_all(settings, [
         set_owner,
         set_creation_mask,
         set_directories,
         redirect_and_sweep_io,
         optional_prevent_core_dump,
         detach_or_continue_process,
-    ]
-    run_all(settings, tasks)
+    ])
 
 def set_owner(userid = os.getuid(), initgroups = False, groupid = os.getgid()):
     """ Set the effective userid of the process, then set the effective group
