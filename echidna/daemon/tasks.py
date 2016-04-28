@@ -40,30 +40,34 @@ def run_tasks(settings):
         detach_or_continue_process,
     ])
 
-def set_owner(userid = os.getuid(), initgroups = False, groupid = os.getgid()):
+def set_owner(userid = os.getuid(), initgroups = False, groupid = os.getgid(), **kwargs):
     """ Set the effective userid of the process, then set the effective group
         or groups of the process.
         """
     change_groups(userid, groupid) if initgroups else change_group(groupid)
     change_user(userid)
+    return kwargs
 
-def set_creation_mask(usermask = 0):
+def set_creation_mask(usermask = 0, **kwargs):
     """ Set file creation mask when creating a new file. """
     change_file_creation_mask(usermask)
+    return kwargs
 
-def set_directories(working_directory = "/", chroot_directory = None):
+def set_directories(working_directory = "/", chroot_directory = None, **kwargs):
     """ Change the root directory, and then the working directory for the
         current process.
         """
     if chroot_directory:
         change_root_directory(chroot_directory)
     change_working_directory(working_directory)
+    return kwargs
 
 def redirect_and_sweep_io(
     files_preserve = [],
     stdin = None,
     stdout = None,
     stderr = None,
+    **kwargs
     ):
         """ Redirect standard io to nothing, or whatever it has been overridden
             to. Then close all file descriptors associated with the process
@@ -74,13 +78,16 @@ def redirect_and_sweep_io(
         
         exclude = files_preserve + io_descriptors
         close_all_open_files(exclude)
+        return kwargs
 
-def optional_prevent_core_dump(prevent_core_dump = True):
+def optional_prevent_core_dump(prevent_core_dump = True, **kwargs):
     """ Prevent the sysem from making a core dump, unless overridden. """
     if prevent_core_dump:
         zero_core_dump_limits()
+    return kwargs
 
-def detach_or_continue_process(detach = should_detach()):
+def detach_or_continue_process(detach = should_detach(), **kwargs):
     """ Detach from the current process unless we are already detached. """
     if detach:
         daemon_fork()
+    return kwargs

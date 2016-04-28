@@ -5,9 +5,7 @@ def run_all(context, tasks):
         This effectively reduces a sequence of tasks to a single call.
     """
     for task in tasks:
-        func_args = getargspec(task).args
-        args = {key:value for key,value in context.items() if key in func_args}
-        task(**args)
+        context = task(**context)
 
 def defer(task, *args, **kwargs):
     """ Take a function and arguments and return a deferred executor. """
